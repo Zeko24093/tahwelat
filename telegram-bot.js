@@ -1,5 +1,6 @@
 
 const TelegramBot = require('node-telegram-bot-api');
+const http = require('http');
 
 // تأكد من إضافة توكن البوت في Secrets
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -350,6 +351,28 @@ bot.on('message', async (msg) => {
             `❌ حدث خطأ أثناء التحليل:\n${error.message}\n\n🔄 يرجى المحاولة مرة أخرى`
         );
     }
+});
+
+// إنشاء خادم ويب للمراقبة
+const server = http.createServer((req, res) => {
+    if (req.url === '/health' || req.url === '/') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            status: 'online',
+            message: 'Telegram Bot is running',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime()
+        }));
+    } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Not Found' }));
+    }
+});
+
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🌐 خادم المراقبة يعمل على المنفذ ${PORT}`);
+    console.log(`🔗 رابط المراقبة: http://localhost:${PORT}/health`);
 });
 
 console.log('🤖 بوت تلجرام جاهز للعمل!');
